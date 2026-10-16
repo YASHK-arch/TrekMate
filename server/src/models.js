@@ -19,7 +19,7 @@ const trekSchema = new mongoose.Schema({
   duration:{type:Number,required:true,min:1},availableSlots:{type:Number,required:true,min:0},
   assignedStaff:{type:mongoose.Schema.Types.ObjectId,ref:'TrekStaff',default:null},
   status:{type:String,enum:['Pending','Approved','Open','Started','Completed'],default:'Pending'},
-  startDate:{type:Date,required:true},endDate:{type:Date,required:true},imageFilename:{type:String,default:''},description:{type:String,default:''},
+  startDate:{type:Date,required:true},endDate:{type:Date,required:true},imageUrl:{type:String,default:''},imageFilename:{type:String,default:''},description:{type:String,default:''},
   region:{type:String,required:true},price:{type:Number,required:true,min:0},
   avgTime:{type:String,default:''},avgDistance:{type:String,default:''},avgGain:{type:String,default:''},avgLoss:{type:String,default:''}
 },opts);

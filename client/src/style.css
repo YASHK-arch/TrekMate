@@ -193,6 +193,7 @@ h1,h2,h3,h4,h5,h6,.navbar-brand{font-family:Outfit,Inter,sans-serif}
 
 /* New Trek Card Styles */
 .trek-image{height:220px!important}
+.trek-delete-button{width:32px;height:32px;display:inline-grid;place-items:center;padding:0}
 .trek-duration-badge{position:absolute;left:15px;top:15px;background:#e0f5e9;color:#1e8a55;border-radius:30px;padding:7px 14px;font-size:.75rem;font-weight:600}
 .trek-price-badge{position:absolute;right:15px;top:15px;background:#fff;color:#1b263b;border-radius:30px;padding:7px 14px;font-size:.75rem;font-weight:700;box-shadow:0 2px 8px rgba(0,0,0,.1)}
 .trek-difficulty-circles{display:flex;align-items:center;gap:6px;margin-bottom:8px}

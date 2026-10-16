@@ -1,5 +1,6 @@
 import mongoose from 'mongoose';
 import { Trek } from './src/models.js';
+import { trekImagesByRegion } from './src/trek-images.js';
 import dotenv from 'dotenv';
 
 dotenv.config();
@@ -92,54 +93,6 @@ const descriptions = [
 
 const difficulties = ['Easy', 'Moderate', 'Difficult'];
 
-const images = {
-  'Nepal': [
-    'https://images.unsplash.com/photo-1544735716-392fe2489ffa?w=800&h=600&fit=crop',
-    'https://images.unsplash.com/photo-1519681393784-d120267933ba?w=800&h=600&fit=crop',
-    'https://images.unsplash.com/photo-1503220317375-aaad61436b1b?w=800&h=600&fit=crop'
-  ],
-  'Northern India': [
-    'https://images.unsplash.com/photo-1564507592333-c60657eea523?w=800&h=600&fit=crop',
-    'https://images.unsplash.com/photo-1598012448163-355938011492?w=800&h=600&fit=crop',
-    'https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?w=800&h=600&fit=crop'
-  ],
-  'Southern India': [
-    'https://images.unsplash.com/photo-1580746738089-0c9b1f89670e?w=800&h=600&fit=crop',
-    'https://images.unsplash.com/photo-1509316975850-ff9c5deb0189?w=800&h=600&fit=crop',
-    'https://images.unsplash.com/photo-1473580044384-7ba9967e16a0?w=800&h=600&fit=crop'
-  ],
-  'Japan': [
-    'https://images.unsplash.com/photo-1493976040374-85c8e12f0c0e?w=800&h=600&fit=crop',
-    'https://images.unsplash.com/photo-1528360983277-13d401cdc186?w=800&h=600&fit=crop',
-    'https://images.unsplash.com/photo-1524413840807-0c3cb6fa808d?w=800&h=600&fit=crop'
-  ],
-  'Vietnam': [
-    'https://images.unsplash.com/photo-1506157786151-b8491531f436?w=800&h=600&fit=crop',
-    'https://images.unsplash.com/photo-1589308078059-be1415eab4c3?w=800&h=600&fit=crop',
-    'https://images.unsplash.com/photo-1538970272646-f61fabb3a8a2?w=800&h=600&fit=crop'
-  ],
-  'Kyrgyzstan': [
-    'https://images.unsplash.com/photo-1518182170546-0766a3e14d16?w=800&h=600&fit=crop',
-    'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=800&h=600&fit=crop',
-    'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800&h=600&fit=crop'
-  ],
-  'Bhutan': [
-    'https://images.unsplash.com/photo-1565539978016-8c1ab9e83231?w=800&h=600&fit=crop',
-    'https://images.unsplash.com/photo-1519681393784-d120267933ba?w=800&h=600&fit=crop',
-    'https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=800&h=600&fit=crop'
-  ],
-  'Sri Lanka': [
-    'https://images.unsplash.com/photo-1598012448163-355938011492?w=800&h=600&fit=crop',
-    'https://images.unsplash.com/photo-1501785888041-af3ef285b470?w=800&h=600&fit=crop',
-    'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=800&h=600&fit=crop'
-  ],
-  'China': [
-    'https://images.unsplash.com/photo-1508804185872-d7badad00f7d?w=800&h=600&fit=crop',
-    'https://images.unsplash.com/photo-1528164344705-47542687000d?w=800&h=600&fit=crop',
-    'https://images.unsplash.com/photo-1508739773434-c26b3d09e071?w=800&h=600&fit=crop'
-  ]
-};
-
 function getRandomItem(arr) {
   return arr[Math.floor(Math.random() * arr.length)];
 }
@@ -174,7 +127,7 @@ function generateTrek(region, index) {
     avgGain: `+${getRandomInt(500, 1200)} m`,
     avgLoss: `-${getRandomInt(400, 1100)} m`,
     description: getRandomItem(descriptions),
-    imageFilename: getRandomItem(images[region] || images['Nepal']),
+    imageUrl: `/static/uploads/${getRandomItem(trekImagesByRegion[region] || trekImagesByRegion.Nepal)}`,
     status: 'Approved'
   };
 }

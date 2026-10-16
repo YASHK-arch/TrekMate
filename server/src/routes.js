@@ -1,16 +1,36 @@
 import { Router } from 'express';
 import multer from 'multer';
-import path from 'path';
-import { fileURLToPath } from 'url';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
+import dotenv from 'dotenv';
+import { v2 as cloudinary } from 'cloudinary';
 import { User,TrekStaff,Admin,Trek,Booking } from './models.js';
+import { getTrekImageFilename } from './trek-images.js';
+dotenv.config();
 const router=Router();
-const __dirname=path.dirname(fileURLToPath(import.meta.url));
-const upload=multer({storage:multer.diskStorage({
- destination:(_req,_file,cb)=>cb(null,path.resolve(__dirname,'../../client/public/static/uploads')),
- filename:(_req,file,cb)=>{const ext=path.extname(file.originalname).toLowerCase().replace(/[^.a-z0-9]/g,'');const base=path.basename(file.originalname,ext).toLowerCase().replace(/[^a-z0-9_-]/g,'-').slice(0,60)||'trek-image';cb(null,`${Date.now()}-${base}${ext}`);}
-}),limits:{fileSize:8*1024*1024},fileFilter:(_req,file,cb)=>cb(null,file.mimetype.startsWith('image/'))});
+const cloudinaryCredentials={
+ cloud_name:process.env.CLOUDINARY_CLOUD_NAME,
+ api_key:process.env.CLOUDINARY_API_KEY,
+ api_secret:process.env.CLOUDINARY_API_SECRET
+};
+const cloudinaryConfigured=Object.values(cloudinaryCredentials).every(Boolean);
+if(cloudinaryConfigured)cloudinary.config(cloudinaryCredentials);
+const upload=multer({storage:multer.memoryStorage(),limits:{fileSize:8*1024*1024},fileFilter:(_req,file,cb)=>{
+ if(!file.mimetype.startsWith('image/'))return cb(new Error('Only image files are allowed.'));
+ cb(null,true);
+}});
+const handleImageUpload=(req,res,next)=>upload.single('image')(req,res,error=>{
+ if(error)return res.status(error.code==='LIMIT_FILE_SIZE'?413:400).json({message:error.message});
+ next();
+});
+const uploadToCloudinary=file=>new Promise((resolve,reject)=>{
+ if(!cloudinaryConfigured){const error=new Error('Cloudinary is not configured. Set CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, and CLOUDINARY_API_SECRET.');error.status=503;return reject(error);}
+ cloudinary.uploader.upload_stream({folder:'trekmate/treks',resource_type:'image'},(error,result)=>{
+  if(error){error.status=502;return reject(error);}
+  if(!result?.secure_url)return reject(Object.assign(new Error('Cloudinary did not return a secure image URL.'),{status:502}));
+  resolve(result.secure_url);
+ }).end(file.buffer);
+});
 const secret=()=>process.env.JWT_SECRET||'development-secret-change-me';
 const publicUser=(u)=>({_id:u._id,id:u._id,name:u.name,email:u.email||u.contactDetails,role:u.role,status:u.status});
 function auth(req,res,next){
@@ -26,7 +46,11 @@ function allow(...roles){return async(req,res,next)=>{try{
  if(user.role==='Staff'&&user.status!=='Approved')return res.status(403).json({message:'Your staff account is awaiting approval.'});
  req.user=user;next();
  }catch(e){res.status(500).json({message:e.message});}}}
-const safeTrek=t=>({...t.toObject(),id:t._id,assignedStaffId:t.assignedStaff?._id||t.assignedStaff||null,assignedStaffName:t.assignedStaff?.name||null,imageUrl:t.imageFilename?`/static/uploads/${t.imageFilename}`:''});
+const safeTrek=t=>{
+ const legacyFilename=t.imageFilename&&!/^https?:\/\//i.test(t.imageFilename)?`/static/uploads/${t.imageFilename}`:'';
+ const imageUrl=t.imageUrl&&!/^https?:\/\/images\.unsplash\.com\//i.test(t.imageUrl)?t.imageUrl:legacyFilename||`/static/uploads/${getTrekImageFilename(t.region||t.location)}`;
+ return {...t.toObject(),id:t._id,assignedStaffId:t.assignedStaff?._id||t.assignedStaff||null,assignedStaffName:t.assignedStaff?.name||null,imageUrl};
+};
 const populateTrek='assignedStaff';
 const getTrek=async(id)=>Trek.findById(id).populate(populateTrek);
 router.post('/auth/register',async(req,res)=>{try{
@@ -66,23 +90,26 @@ router.get('/treks',async(req,res)=>{try{
  const treks=await Trek.find(q).populate(populateTrek).sort({startDate:1});res.json(treks.map(safeTrek));
  }catch(e){res.status(500).json({message:e.message});}});
 router.get('/treks/:id',auth,async(req,res)=>{const t=await getTrek(req.params.id);if(!t)return res.status(404).json({message:'Trek not found'});res.json(safeTrek(t));});
-router.post('/treks',auth,allow('Admin'),upload.single('image'),async(req,res)=>{try{
+router.post('/treks',auth,allow('Admin'),handleImageUpload,async(req,res)=>{try{
  const b=req.body;const startDate=new Date(b.startDate),endDate=new Date(b.endDate);
  if(!(endDate>startDate))return res.status(400).json({message:'End date must be strictly after the start date.'});
  if(+b.availableSlots<1||+b.duration<1)return res.status(400).json({message:'Slots and duration must be positive integers.'});
- const t=await Trek.create({name:b.name,location:b.location,difficulty:b.difficulty,duration:+b.duration,availableSlots:+b.availableSlots,assignedStaff:b.assignedStaffId||null,startDate,endDate,status:b.assignedStaffId?'Approved':'Pending',description:b.description||'',imageFilename:req.file?.filename||''});
- res.status(201).json({trek:safeTrek(await getTrek(t._id)),message:'Trek added successfully.'});
- }catch(e){res.status(400).json({message:e.message});}});
-router.patch('/treks/:id',auth,allow('Admin'),upload.single('image'),async(req,res)=>{try{
- const t=await Trek.findById(req.params.id);if(!t)return res.status(404).json({message:'Trek not found'});
- for(const k of ['name','location','difficulty','description'])if(req.body[k]!==undefined)t[k]=req.body[k];
- for(const k of ['duration','availableSlots'])if(req.body[k]!==undefined)t[k]=Number(req.body[k]);
- if(req.body.startDate)t.startDate=new Date(req.body.startDate);if(req.body.endDate)t.endDate=new Date(req.body.endDate);
- if(req.body.assignedStaffId!==undefined)t.assignedStaff=req.body.assignedStaffId||null;
- if(req.file)t.imageFilename=req.file.filename;
- if(!(t.endDate>t.startDate)||t.duration<1||t.availableSlots<0)return res.status(400).json({message:'Check dates, duration, and available slots.'});
- await t.save();res.json({trek:safeTrek(await getTrek(t._id)),message:'Trek updated successfully.'});
- }catch(e){res.status(400).json({message:e.message});}});
+  const imageUrl=req.file?await uploadToCloudinary(req.file):`/static/uploads/${getTrekImageFilename(b.region||b.location)}`;
+  const t=await Trek.create({name:b.name,location:b.location,region:b.region||b.location,difficulty:b.difficulty,duration:+b.duration,availableSlots:+b.availableSlots,assignedStaff:b.assignedStaffId||null,startDate,endDate,status:b.assignedStaffId?'Approved':'Pending',description:b.description||'',imageUrl});
+  res.status(201).json({trek:safeTrek(await getTrek(t._id)),message:'Trek added successfully.'});
+ }catch(e){res.status(e.status||400).json({message:e.message});}});
+ router.patch('/treks/:id',auth,allow('Admin'),handleImageUpload,async(req,res)=>{try{
+  const t=await Trek.findById(req.params.id);if(!t)return res.status(404).json({message:'Trek not found'});
+  for(const k of ['name','location','difficulty','description'])if(req.body[k]!==undefined)t[k]=req.body[k];
+  for(const k of ['duration','availableSlots'])if(req.body[k]!==undefined)t[k]=Number(req.body[k]);
+  if(req.body.startDate)t.startDate=new Date(req.body.startDate);if(req.body.endDate)t.endDate=new Date(req.body.endDate);
+  if(req.body.assignedStaffId!==undefined)t.assignedStaff=req.body.assignedStaffId||null;
+  if(req.file){t.imageUrl=await uploadToCloudinary(req.file);t.imageFilename='';}
+  else if(!t.imageUrl&&!t.imageFilename)t.imageUrl=`/static/uploads/${getTrekImageFilename(t.region||t.location)}`;
+  if(req.body.location!==undefined)t.region=req.body.region||req.body.location;
+  if(!(t.endDate>t.startDate)||t.duration<1||t.availableSlots<0)return res.status(400).json({message:'Check dates, duration, and available slots.'});
+  await t.save();res.json({trek:safeTrek(await getTrek(t._id)),message:'Trek updated successfully.'});
+ }catch(e){res.status(e.status||400).json({message:e.message});}});
 router.delete('/treks/:id',auth,allow('Admin'),async(req,res)=>{const t=await Trek.findByIdAndDelete(req.params.id);if(!t)return res.status(404).json({message:'Trek not found'});await Booking.deleteMany({trek:t._id});res.json({message:'Trek deleted successfully.'});});
 router.post('/treks/:id/book',auth,allow('User'),async(req,res)=>{try{
  const t=await Trek.findById(req.params.id);if(!t)return res.status(404).json({message:'Trek not found'});
