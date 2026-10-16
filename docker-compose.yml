@@ -1,0 +1,11 @@
+services:
+  mongodb:
+    image: mongo:7
+    container_name: trekking-management-mongodb
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    volumes:
+      - trekking_mongo_data:/data/db
+volumes:
+  trekking_mongo_data:

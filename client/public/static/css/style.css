@@ -1,0 +1,181 @@
+/* static/css/style.css - Alpine Modern Theme */
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Outfit:wght@500;600;700&display=swap');
+
+:root {
+    --primary-color: #2a9d8f;
+    --primary-hover: #21867a;
+    --sidebar-bg: #1b263b;
+    --sidebar-text: #e0e1dd;
+    --sidebar-active-bg: rgba(42, 157, 143, 0.2);
+    --sidebar-active-text: #ffffff;
+    --bg-color: #f4f7f6;
+    --card-shadow: 0 10px 30px rgba(0,0,0,0.05);
+    --transition-speed: 0.3s;
+}
+
+body {
+    font-family: 'Inter', sans-serif;
+    background-color: var(--bg-color);
+    color: #333;
+}
+
+h1, h2, h3, h4, h5, h6, .navbar-brand {
+    font-family: 'Outfit', sans-serif;
+}
+
+/* Navbar */
+.navbar-custom {
+    background-color: rgba(255, 255, 255, 0.95) !important;
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid rgba(0,0,0,0.05);
+    position: sticky;
+    top: 0;
+    z-index: 1030;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+}
+
+.navbar-custom .navbar-brand {
+    color: var(--sidebar-bg);
+    font-weight: 700;
+    font-size: 1.4rem;
+    letter-spacing: -0.5px;
+}
+
+/* Sidebar */
+.sidebar {
+    background-color: var(--sidebar-bg) !important;
+    border-right: none;
+    min-height: calc(100vh - 57px);
+    box-shadow: 4px 0 15px rgba(0,0,0,0.03);
+}
+
+@media (min-width: 768px) {
+    .sidebar {
+        position: sticky;
+        top: 57px;
+        height: calc(100vh - 57px);
+        overflow-y: auto;
+    }
+}
+
+.sidebar .nav-link {
+    color: var(--sidebar-text);
+    font-weight: 500;
+    padding: 12px 20px;
+    margin: 4px 15px;
+    border-radius: 8px;
+    transition: all var(--transition-speed) ease;
+}
+
+.sidebar .nav-link:hover {
+    background-color: rgba(255,255,255,0.05);
+    color: #fff;
+    transform: translateX(4px);
+}
+
+.sidebar .nav-link.active {
+    background-color: var(--sidebar-active-bg);
+    color: var(--sidebar-active-text);
+    border-left: 4px solid var(--primary-color);
+}
+
+.sidebar .nav-link i {
+    margin-right: 12px;
+    font-size: 1.1rem;
+}
+
+.offcanvas-header {
+    background-color: var(--sidebar-bg);
+    color: white;
+    border-bottom: 1px solid rgba(255,255,255,0.1) !important;
+}
+
+.offcanvas-header .btn-close {
+    filter: invert(1);
+}
+
+/* Main Content & Cards */
+.main-content {
+    padding: 30px;
+}
+
+.card {
+    border: none;
+    border-radius: 12px;
+    box-shadow: var(--card-shadow);
+    transition: transform var(--transition-speed) ease, box-shadow var(--transition-speed) ease;
+}
+
+.card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 15px 35px rgba(0,0,0,0.08);
+}
+
+/* Buttons */
+.btn-primary {
+    background: linear-gradient(135deg, #2a9d8f, #21867a);
+    border: none;
+    border-radius: 50rem;
+    padding: 10px 24px;
+    font-weight: 600;
+    transition: all var(--transition-speed) ease;
+}
+
+.btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(42, 157, 143, 0.3);
+}
+
+/* Tables */
+.table {
+    border-collapse: separate;
+    border-spacing: 0;
+    width: 100%;
+}
+.table thead th {
+    border-bottom: 2px solid #e9ecef;
+    border-top: none;
+    font-weight: 600;
+    color: #6c757d;
+    text-transform: uppercase;
+    font-size: 0.85rem;
+    letter-spacing: 0.5px;
+    padding: 16px;
+}
+.table tbody td {
+    padding: 16px;
+    vertical-align: middle;
+    border-bottom: 1px solid #f1f3f5;
+    transition: background-color var(--transition-speed);
+}
+.table-hover tbody tr:hover td {
+    background-color: rgba(42, 157, 143, 0.03);
+}
+
+/* Auth Pages */
+body.auth-bg {
+    background-image: url('https://wallpapercave.com/wp/wp4854983.jpg');
+    background-size: cover;
+    background-position: center;
+    background-attachment: fixed;
+    background-repeat: no-repeat;
+}
+.auth-wrapper {
+    min-height: calc(100vh - 57px);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding-bottom: 3rem;
+}
+.auth-card {
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.4);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+    margin: 0 !important;
+    width: 100%;
+    padding: 40px 30px;
+    border-radius: 16px;
+}
