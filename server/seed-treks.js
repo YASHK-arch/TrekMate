@@ -2,7 +2,9 @@ import mongoose from 'mongoose';
 import { Trek } from './src/models.js';
 import { trekImagesByRegion } from './src/trek-images.js';
 import dotenv from 'dotenv';
+import dns from 'node:dns';
 
+dns.setServers(['8.8.8.8']);
 dotenv.config();
 
 const regions = [
@@ -112,6 +114,9 @@ function generateTrek(region, index) {
   const endDate = new Date(startDate);
   endDate.setDate(endDate.getDate() + duration);
   
+  const images = trekImagesByRegion[region] || trekImagesByRegion.Nepal;
+  const imageUrl = images[index % images.length];
+  
   return {
     name,
     location: region,
@@ -127,14 +132,20 @@ function generateTrek(region, index) {
     avgGain: `+${getRandomInt(500, 1200)} m`,
     avgLoss: `-${getRandomInt(400, 1100)} m`,
     description: getRandomItem(descriptions),
-    imageUrl: `/static/uploads/${getRandomItem(trekImagesByRegion[region] || trekImagesByRegion.Nepal)}`,
+    imageUrl: imageUrl,
     status: 'Approved'
   };
 }
 
 async function seedTreks() {
   try {
-    await mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/trekking');
+    const uri = process.env.MONGODB_URI;
+    if (!uri) {
+      console.error('ERROR: MONGODB_URI is not set in .env file');
+      process.exit(1);
+    }
+    console.log('Connecting to cloud MongoDB:', uri.replace(/\/\/[^:]+:[^@]+@/, '//***:***@'));
+    await mongoose.connect(uri);
     console.log('Connected to MongoDB');
 
     // Clear existing treks

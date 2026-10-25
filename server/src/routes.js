@@ -33,13 +33,18 @@ const uploadToCloudinary=file=>new Promise((resolve,reject)=>{
 });
 const secret=()=>process.env.JWT_SECRET||'development-secret-change-me';
 const publicUser=(u)=>({_id:u._id,id:u._id,name:u.name,email:u.email||u.contactDetails,role:u.role,status:u.status});
+const getModelByRole=(role)=>{
+ if(role==='Staff'||role==='TrekStaff')return TrekStaff;
+ if(role==='Admin')return Admin;
+ return User;
+};
 function auth(req,res,next){
  const token=(req.headers.authorization||'').replace(/^Bearer\s+/i,'');
  try{if(!token)throw Error();req.auth=jwt.verify(token,secret());next();}
  catch{return res.status(401).json({message:'Please log in to continue.'});}
 }
 function allow(...roles){return async(req,res,next)=>{try{
- const Model={User,TrekStaff,Admin}[req.auth.role]; const user=await Model?.findById(req.auth.id);
+ const Model=getModelByRole(req.auth.role); const user=await Model?.findById(req.auth.id);
  if(!user)return res.status(401).json({message:'Account not found.'});
  if(!roles.includes(user.role))return res.status(403).json({message:'You do not have permission to access this resource.'});
  if(user.status==='Blacklisted')return res.status(403).json({message:'Your account has been blacklisted.'});
@@ -74,9 +79,9 @@ router.post('/auth/login',async(req,res)=>{try{
  const token=jwt.sign({id:u._id,role:u.role},secret(),{expiresIn:'7d'});
  res.json({token,user:publicUser(u)});
  }catch(e){res.status(500).json({message:e.message});}});
-router.get('/auth/me',auth,async(req,res)=>{const Model={User,TrekStaff,Admin}[req.auth.role];const u=await Model.findById(req.auth.id);if(!u)return res.status(401).json({message:'Account not found'});res.json({user:publicUser(u)});});
+router.get('/auth/me',auth,async(req,res)=>{try{const Model=getModelByRole(req.auth.role);const u=await Model?.findById(req.auth.id);if(!u)return res.status(401).json({message:'Account not found'});res.json({user:publicUser(u)});}catch(e){res.status(500).json({message:e.message});}});
 router.patch('/profile',auth,async(req,res)=>{try{
- const Model={User,TrekStaff,Admin}[req.auth.role];const u=await Model.findById(req.auth.id);
+ const Model=getModelByRole(req.auth.role);const u=await Model?.findById(req.auth.id);
  if(req.body.name)u.name=req.body.name;
  if(req.auth.role==='Staff'&&req.body.email)u.contactDetails=req.body.email;
  if(req.auth.role!=='Staff'&&req.body.email)u.email=req.body.email;
@@ -138,7 +143,7 @@ router.get('/admin/users',auth,allow('Admin'),async(req,res)=>{const q=req.query
 router.patch('/admin/users/:id/toggle-blacklist',auth,allow('Admin'),async(req,res)=>{const u=await User.findById(req.params.id);if(!u)return res.status(404).json({message:'User not found'});u.status=u.status==='Blacklisted'?'Active':'Blacklisted';await u.save();res.json({user:publicUser(u),message:`User ${u.name} status updated.`});});
 router.get('/admin/staff',auth,allow('Admin'),async(req,res)=>res.json((await TrekStaff.find().sort({createdAt:-1})).map(publicUser)));
 router.patch('/admin/staff/:id/status',auth,allow('Admin'),async(req,res)=>{if(!['Pending','Approved','Rejected','Blacklisted'].includes(req.body.status))return res.status(400).json({message:'Invalid staff status'});const s=await TrekStaff.findByIdAndUpdate(req.params.id,{status:req.body.status},{new:true});if(!s)return res.status(404).json({message:'Staff not found'});res.json({user:publicUser(s),message:'Staff status updated.'});});
-router.get('/staff/summary',auth,allow('Staff'),async(req,res)=>{const treks=await Trek.find({assignedStaff:req.user._id}).sort({startDate:1});const ids=treks.map(t=>t._id);const participants=await Booking.countDocuments({trek:{$in:ids}});res.json({treks:treks.map(safeTrek),totalAssigned:treks.length,openTreks:treks.filter(t=>t.status==='Open').length,totalParticipants:participants});});
+router.get('/staff/summary',auth,allow('Staff'),async(req,res)=>{try{const treks=await Trek.find({assignedStaff:req.user._id}).sort({startDate:1});const ids=treks.map(t=>t._id);const participants=await Booking.countDocuments({trek:{$in:ids}});res.json({treks:treks.map(safeTrek),totalAssigned:treks.length,openTreks:treks.filter(t=>t.status==='Open').length,totalParticipants:participants});}catch(e){res.status(500).json({message:e.message});}});
 router.get('/staff/treks/:id',auth,allow('Staff'),async(req,res)=>{const t=await getTrek(req.params.id);if(!t||String(t.assignedStaff?._id)!==String(req.user._id))return res.status(404).json({message:'Assigned trek not found'});const bs=await Booking.find({trek:t._id}).populate('user');res.json({trek:safeTrek(t),bookings:bs});});
 router.patch('/staff/treks/:id/status',auth,allow('Staff'),async(req,res)=>{const t=await Trek.findOne({_id:req.params.id,assignedStaff:req.user._id});if(!t)return res.status(404).json({message:'Assigned trek not found'});const status=req.body.status;if(!['Approved','Open','Started','Completed'].includes(status))return res.status(400).json({message:'Invalid status.'});t.status=status;await t.save();if(status==='Completed')await Booking.updateMany({trek:t._id,status:'Booked'},{$set:{status:'Completed'}});res.json({message:`Trek status updated to ${status}.`,trek:safeTrek(t)});});
 router.get('/users/:id',async(req,res)=>{const u=await User.findById(req.params.id);if(!u)return res.status(404).json({message:'User not found'});res.json({id:u._id,name:u.name,email:u.email,role:u.role});});
