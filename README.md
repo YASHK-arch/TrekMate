@@ -1,5 +1,8 @@
 # Trekking Management Application — MERN Edition
 
+<img width="1166" height="664" alt="image" src="https://github.com/user-attachments/assets/487c344c-8bff-4332-bb76-25c5c8a9acd0" />
+
+
 A migration of the original Flask + SQLite + Jinja2 application to **MongoDB, Express, React, and Node.js**. The existing Bootstrap-based visual language, colors, typography, responsive layouts, role-based navigation, trek lifecycle, and booking workflow have been carried into the React frontend and Express API. The original image assets and CSS are retained.
 
 ## Stack
