@@ -102,7 +102,16 @@ function TrekBrowse({notify,admin=false}){
       if(timespan==='1-3')data=data.filter(t=>t.duration>=1&&t.duration<=3);
       else if(timespan==='4-7')data=data.filter(t=>t.duration>=4&&t.duration<=7);
       else if(timespan==='8+')data=data.filter(t=>t.duration>=8);
-      if(startDate)data=data.filter(t=>t.startDate&&new Date(t.startDate)>=new Date(startDate));
+      if(startDate){
+        const selStart=new Date(`${startDate}T00:00:00`).getTime();
+        const selEnd=new Date(`${startDate}T23:59:59.999`).getTime();
+        data=data.filter(t=>{
+          if(!t.startDate)return false;
+          const start=new Date(t.startDate).getTime();
+          const end=t.endDate?new Date(t.endDate).getTime():start+((t.duration||1)*86400000);
+          return start<=selEnd&&end>=selStart;
+        });
+      }
       if(sortBy==='price-desc')data.sort((a,b)=>(b.price||0)-(a.price||0));
       else data.sort((a,b)=>(a.price||0)-(b.price||0));
       setTreks(data);
