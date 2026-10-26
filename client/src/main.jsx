@@ -771,7 +771,7 @@ function TrekForm({notify}){
           </div>
           <div className="col-12">
             <label className="form-label fw-semibold">Description</label>
-            <textarea className="form-control" rows="3" name="description" value={form.description} onChange={change} placeholder="Describe the trail highlights, terrain, preparation tips..."/>
+            <textarea className="form-control placeholder-light" rows="3" name="description" value={form.description} onChange={change} placeholder="Describe the trail highlights, terrain, preparation tips..."/>
           </div>
           <div className="col-12">
             <div className="d-flex justify-content-between align-items-center mb-1">
@@ -780,7 +780,7 @@ function TrekForm({notify}){
                 Markdown enabled: # Headings, **bold**, *italic*, - lists, `code`, &gt; quotes
               </span>
             </div>
-            <textarea className="form-control font-monospace" rows="6" name="detailedDescription" value={form.detailedDescription} onChange={change} placeholder="### Day 1: Kathmandu to Lukla&#10;- Morning flight to Tenzing-Hillary Airport&#10;- **Trek duration**: 4 hours&#10;&#10;### Day 2: Namche Bazaar&#10;Acclimatization day with panoramic views of Mt. Everest..."/>
+            <textarea className="form-control font-monospace placeholder-light" rows="6" name="detailedDescription" value={form.detailedDescription} onChange={change} placeholder="### Day 1: Kathmandu to Lukla&#10;- Morning flight to Tenzing-Hillary Airport&#10;- **Trek duration**: 4 hours&#10;&#10;### Day 2: Namche Bazaar&#10;Acclimatization day with panoramic views of Mt. Everest..."/>
             {form.detailedDescription&&(
               <div className="mt-2 p-3 bg-light rounded-3 border">
                 <small className="text-secondary fw-semibold d-block mb-2 text-uppercase" style={{letterSpacing:'0.5px'}}>

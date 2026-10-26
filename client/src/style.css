@@ -913,5 +913,27 @@ h1,h2,h3,h4,h5,h6,.navbar-brand{font-family:Outfit,Inter,sans-serif}
   border-top: 1px solid #e2e8f0;
 }
 
+/* Light placeholder text for description & detailed description */
+textarea[name="description"]::placeholder,
+textarea[name="detailedDescription"]::placeholder,
+.placeholder-light::placeholder {
+  color: #adb5bd !important;
+  opacity: 0.55 !important;
+  font-weight: 300 !important;
+}
 
+textarea[name="description"]::-webkit-input-placeholder,
+textarea[name="detailedDescription"]::-webkit-input-placeholder,
+.placeholder-light::-webkit-input-placeholder {
+  color: #adb5bd !important;
+  opacity: 0.55 !important;
+  font-weight: 300 !important;
+}
 
+textarea[name="description"]::-moz-placeholder,
+textarea[name="detailedDescription"]::-moz-placeholder,
+.placeholder-light::-moz-placeholder {
+  color: #adb5bd !important;
+  opacity: 0.55 !important;
+  font-weight: 300 !important;
+}
