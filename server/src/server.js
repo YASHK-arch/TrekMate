@@ -14,12 +14,22 @@ dns.setServers(["8.8.8.8"]);
 dotenv.config();
 const app = express();
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const isProd = process.env.NODE_ENV === 'production';
+
 app.use(cors({ origin: process.env.CLIENT_ORIGIN || 'http://localhost:5173' }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use('/uploads', express.static(path.resolve(__dirname, '../../client/public/static/uploads')));
 app.get('/api/health', (_req,res)=>res.json({ok:true,service:'trekking-management-api'}));
 app.use('/api', api);
+
+// In production, serve the Vite-built client and let React Router handle routing
+if (isProd) {
+  const clientDist = path.resolve(__dirname, '../../client/dist');
+  app.use(express.static(clientDist));
+  app.get('*', (_req, res) => res.sendFile(path.join(clientDist, 'index.html')));
+}
+
 const port = process.env.PORT || 5000;
 try {
   await mongoose.connect(process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/trekking_management');
@@ -48,3 +58,4 @@ try {
   console.error('Could not connect to MongoDB. Start MongoDB and check MONGODB_URI.', err.message);
   process.exit(1);
 }
+

@@ -8,3 +8,4 @@ server/seed-additional-users.js
 server/seed-staff.js
 server/seed-treks.js
 server/seed-users.js
+server/migrate-treks-to-cloudinary.js
