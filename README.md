@@ -66,7 +66,7 @@ The server creates this administrator only if that email does not already exist.
 
 ### Trekker
 
-- Register/login, browse treks, filter by location and difficulty
+- Register/login, browse treks, filter by region and difficulty
 - View trek details and assigned guide
 - Book only `Open` treks, prevent duplicate bookings and overbooking
 - View active bookings, cancel bookings (slot restored), and view history

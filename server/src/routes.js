@@ -53,7 +53,7 @@ function allow(...roles){return async(req,res,next)=>{try{
  }catch(e){res.status(500).json({message:e.message});}}}
 const safeTrek=t=>{
  const legacyFilename=t.imageFilename&&!/^https?:\/\//i.test(t.imageFilename)?`/static/uploads/${t.imageFilename}`:'';
- const imageUrl=t.imageUrl&&!/^https?:\/\/images\.unsplash\.com\//i.test(t.imageUrl)?t.imageUrl:legacyFilename||`/static/uploads/${getTrekImageFilename(t.region||t.location)}`;
+ const imageUrl=t.imageUrl&&!/^https?:\/\/images\.unsplash\.com\//i.test(t.imageUrl)?t.imageUrl:legacyFilename||`/static/uploads/${getTrekImageFilename(t.region||'Nepal')}`;
  return {...t.toObject(),id:t._id,assignedStaffId:t.assignedStaff?._id||t.assignedStaff||null,assignedStaffName:t.assignedStaff?.name||null,imageUrl};
 };
 const populateTrek='assignedStaff';
@@ -90,8 +90,8 @@ router.patch('/profile',auth,async(req,res)=>{try{
  }catch(e){res.status(400).json({message:e.code===11000?'Email already in use.':e.message});}});
 router.get('/treks',async(req,res)=>{try{
  const q={};if(req.query.status)q.status=req.query.status;else if(req.query.public==='true')q.status={$in:['Approved','Open']};
- if(req.query.location)q.location={$regex:req.query.location,$options:'i'};
  if(req.query.difficulty)q.difficulty=req.query.difficulty;
+ if(req.query.region)q.region={$regex:req.query.region,$options:'i'};
  const treks=await Trek.find(q).populate(populateTrek).sort({startDate:1});res.json(treks.map(safeTrek));
  }catch(e){res.status(500).json({message:e.message});}});
 router.get('/treks/:id',auth,async(req,res)=>{const t=await getTrek(req.params.id);if(!t)return res.status(404).json({message:'Trek not found'});res.json(safeTrek(t));});
@@ -99,22 +99,41 @@ router.post('/treks',auth,allow('Admin'),handleImageUpload,async(req,res)=>{try{
  const b=req.body;const startDate=new Date(b.startDate),endDate=new Date(b.endDate);
  if(!(endDate>startDate))return res.status(400).json({message:'End date must be strictly after the start date.'});
  if(+b.availableSlots<1||+b.duration<1)return res.status(400).json({message:'Slots and duration must be positive integers.'});
-  const imageUrl=req.file?await uploadToCloudinary(req.file):`/static/uploads/${getTrekImageFilename(b.region||b.location)}`;
-  const t=await Trek.create({name:b.name,location:b.location,region:b.region||b.location,difficulty:b.difficulty,duration:+b.duration,availableSlots:+b.availableSlots,assignedStaff:b.assignedStaffId||null,startDate,endDate,status:b.assignedStaffId?'Approved':'Pending',description:b.description||'',imageUrl});
-  res.status(201).json({trek:safeTrek(await getTrek(t._id)),message:'Trek added successfully.'});
- }catch(e){res.status(e.status||400).json({message:e.message});}});
- router.patch('/treks/:id',auth,allow('Admin'),handleImageUpload,async(req,res)=>{try{
-  const t=await Trek.findById(req.params.id);if(!t)return res.status(404).json({message:'Trek not found'});
-  for(const k of ['name','location','difficulty','description'])if(req.body[k]!==undefined)t[k]=req.body[k];
-  for(const k of ['duration','availableSlots'])if(req.body[k]!==undefined)t[k]=Number(req.body[k]);
-  if(req.body.startDate)t.startDate=new Date(req.body.startDate);if(req.body.endDate)t.endDate=new Date(req.body.endDate);
-  if(req.body.assignedStaffId!==undefined)t.assignedStaff=req.body.assignedStaffId||null;
-  if(req.file){t.imageUrl=await uploadToCloudinary(req.file);t.imageFilename='';}
-  else if(!t.imageUrl&&!t.imageFilename)t.imageUrl=`/static/uploads/${getTrekImageFilename(t.region||t.location)}`;
-  if(req.body.location!==undefined)t.region=req.body.region||req.body.location;
-  if(!(t.endDate>t.startDate)||t.duration<1||t.availableSlots<0)return res.status(400).json({message:'Check dates, duration, and available slots.'});
-  await t.save();res.json({trek:safeTrek(await getTrek(t._id)),message:'Trek updated successfully.'});
- }catch(e){res.status(e.status||400).json({message:e.message});}});
+ const imageUrl=req.file?await uploadToCloudinary(req.file):`/static/uploads/${getTrekImageFilename(b.region||'Nepal')}`;
+ const t=await Trek.create({
+   name:b.name,
+   region:b.region||'Nepal',
+   location:b.region||'Nepal',
+   difficulty:b.difficulty,
+   duration:+b.duration,
+   availableSlots:+b.availableSlots,
+   price:+b.price||0,
+   avgTime:b.avgTime||'',
+   avgDistance:b.avgDistance||'',
+   avgGain:b.avgGain||'',
+   avgLoss:b.avgLoss||'',
+   assignedStaff:b.assignedStaffId||null,
+   startDate,
+   endDate,
+   status:b.assignedStaffId?'Approved':'Pending',
+   description:b.description||'',
+   detailedDescription:b.detailedDescription||'',
+   imageUrl
+ });
+ res.status(201).json({trek:safeTrek(await getTrek(t._id)),message:'Trek added successfully.'});
+}catch(e){res.status(e.status||400).json({message:e.message});}});
+router.patch('/treks/:id',auth,allow('Admin'),handleImageUpload,async(req,res)=>{try{
+ const t=await Trek.findById(req.params.id);if(!t)return res.status(404).json({message:'Trek not found'});
+ for(const k of ['name','region','difficulty','description','detailedDescription','avgTime','avgDistance','avgGain','avgLoss'])if(req.body[k]!==undefined)t[k]=req.body[k];
+ if(req.body.region!==undefined)t.location=req.body.region;
+ for(const k of ['duration','availableSlots','price'])if(req.body[k]!==undefined)t[k]=Number(req.body[k]);
+ if(req.body.startDate)t.startDate=new Date(req.body.startDate);if(req.body.endDate)t.endDate=new Date(req.body.endDate);
+ if(req.body.assignedStaffId!==undefined)t.assignedStaff=req.body.assignedStaffId||null;
+ if(req.file){t.imageUrl=await uploadToCloudinary(req.file);t.imageFilename='';}
+ else if(!t.imageUrl&&!t.imageFilename)t.imageUrl=`/static/uploads/${getTrekImageFilename(t.region||'Nepal')}`;
+ if(!(t.endDate>t.startDate)||t.duration<1||t.availableSlots<0)return res.status(400).json({message:'Check dates, duration, and available slots.'});
+ await t.save();res.json({trek:safeTrek(await getTrek(t._id)),message:'Trek updated successfully.'});
+}catch(e){res.status(e.status||400).json({message:e.message});}});
 router.delete('/treks/:id',auth,allow('Admin'),async(req,res)=>{const t=await Trek.findByIdAndDelete(req.params.id);if(!t)return res.status(404).json({message:'Trek not found'});await Booking.deleteMany({trek:t._id});res.json({message:'Trek deleted successfully.'});});
 router.post('/treks/:id/book',auth,allow('User'),async(req,res)=>{try{
  const t=await Trek.findById(req.params.id);if(!t)return res.status(404).json({message:'Trek not found'});

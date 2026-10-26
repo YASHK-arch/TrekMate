@@ -28,13 +28,13 @@ try {
       { imageFilename: /^https?:\/\//i },
       { imageUrl: /^https?:\/\/images\.unsplash\.com\//i }
     ]
-  }).select('_id region location').lean();
+  }).select('_id region').lean();
   if (legacyTreks.length) {
     await Trek.bulkWrite(legacyTreks.map(trek => ({
       updateOne: {
         filter: { _id: trek._id },
         update: { $set: {
-          imageUrl: `/static/uploads/${getTrekImageFilename(trek.region || trek.location)}`,
+          imageUrl: `/static/uploads/${getTrekImageFilename(trek.region)}`,
           imageFilename: ''
         } }
       }

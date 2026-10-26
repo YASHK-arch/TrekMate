@@ -2,3 +2,9 @@ node_modules/
 client/dist/
 server/.env
 .DS_Store
+
+# Seed scripts
+server/seed-additional-users.js
+server/seed-staff.js
+server/seed-treks.js
+server/seed-users.js

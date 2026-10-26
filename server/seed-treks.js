@@ -119,7 +119,6 @@ function generateTrek(region, index) {
   
   return {
     name,
-    location: region,
     difficulty,
     duration,
     availableSlots,
