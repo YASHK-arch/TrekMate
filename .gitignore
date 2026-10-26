@@ -9,3 +9,5 @@ server/seed-staff.js
 server/seed-treks.js
 server/seed-users.js
 server/migrate-treks-to-cloudinary.js
+server/staff_data.md
+server/users_data.md
