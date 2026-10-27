@@ -10,6 +10,7 @@
 
 An enterprise-grade, role-based trekking expedition management platform built on the **MERN (MongoDB, Express, React, Node.js)** stack. Designed to streamline outdoor adventure logistics, TrekMate provides dedicated interfaces for **System Administrators**, **Expedition Staff Guides**, and **Trekkers**, featuring real-time seat inventory reservation, interactive Markdown trail itineraries, Cloudinary-backed media pipelines, and dynamic analytics.
 
+Demonstration video link - https://youtu.be/YFC5befc--4?si=pLbtmIkqA5ad4Sqj
 ---
 
 ## 📌 Table of Contents
